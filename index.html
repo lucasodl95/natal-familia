@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pênaltis de Natal - Cruzeiro x Galo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Login Overlay -->
+    <div id="login-overlay">
+        <div class="login-box">
+            <h1>🔒 Senha Secreta</h1>
+            <p>Digite a senha para desbloquear o presente do Nandinho:</p>
+            <input type="text" id="password-input" placeholder="Senha...">
+            <button id="login-btn">Entrar</button>
+            <p id="error-msg" class="hidden">Senha incorreta!</p>
+        </div>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container" class="hidden">
+
+        <!-- Header / Scoreboard -->
+        <header>
+            <h1 class="christmas-title">🎄 Feliz Natal Nandinho! 🎄</h1>
+            <div class="word-display">
+                <!-- Letters will be injected here -->
+                <div id="word-slots"></div>
+            </div>
+            <div id="message-box" class="message-box hidden"></div>
+        </header>
+
+        <!-- Game Area -->
+        <div class="field">
+
+            <!-- Snow container -->
+            <div id="snow-container"></div>
+
+            <!-- Goal -->
+            <div class="goal-container">
+                <div class="goal-post">
+                    <div class="net"></div>
+                    <!-- Goalkeeper -->
+                    <div id="goalkeeper" class="goalkeeper">
+                        <div class="santa-hat"></div>
+                        <div class="head"></div>
+                        <div class="body galo-kit"></div>
+                        <div class="legs"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ball -->
+            <div id="ball" class="ball"></div>
+
+            <!-- Player (Kicker) -->
+            <div id="player" class="player">
+                <div class="santa-hat"></div>
+                <div class="head"></div>
+                <div class="body cruzeiro-kit"></div>
+                <div class="legs"></div>
+            </div>
+
+            <!-- Click area for shooting (overlay on goal) -->
+            <div id="shoot-zone"></div>
+
+        </div>
+
+    </div>
+
+    <!-- Victory Modal -->
+    <div id="victory-modal" class="hidden">
+        <div class="victory-content">
+            <h1>🎅 HO HO HO! 🎅</h1>
+            <h2>PARABÉNS NANDINHO!</h2>
+            <p>Seu Amigo Oculto te deseja um Feliz Natal repleto de vitórias!</p>
+            <p>(E que o Cruzeiro continue mandando em Minas!)</p>
+            <button onclick="location.reload()">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

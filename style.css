@@ -1,0 +1,376 @@
+:root {
+    --grass-green: #2ecc71;
+    --sky-blue: #87CEEB;
+    --cruzeiro-blue: #0054a6;
+    --galo-black: #000000;
+    --galo-white: #ffffff;
+    --christmas-red: #d42426;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    overflow: hidden;
+    background-color: var(--sky-blue);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Login Overlay */
+#login-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    flex-direction: column;
+}
+
+.login-box {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    text-align: center;
+    border: 4px solid var(--christmas-red);
+}
+
+.login-box input {
+    padding: 10px;
+    font-size: 1.2rem;
+    margin: 10px 0;
+}
+
+.login-box button {
+    padding: 10px 20px;
+    background: var(--cruzeiro-blue);
+    color: white;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+#error-msg {
+    color: red;
+    font-weight: bold;
+}
+
+/* Game Container */
+#game-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    background: var(--christmas-red);
+    color: white;
+    padding: 10px;
+    text-align: center;
+    z-index: 10;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.christmas-title {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 0px #000;
+}
+
+.word-display {
+    background: rgba(0,0,0,0.2);
+    padding: 10px;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+#word-slots {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+    font-family: monospace;
+}
+
+.slot {
+    width: 40px;
+    height: 50px;
+    background: white;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    border-bottom: 4px solid #aaa;
+}
+
+.message-box {
+    margin-top: 10px;
+    background: #fff;
+    color: #333;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    animation: popIn 0.3s ease-out;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+}
+
+/* Field */
+.field {
+    flex-grow: 1;
+    background: linear-gradient(to bottom, var(--sky-blue) 0%, var(--sky-blue) 40%, var(--grass-green) 40%, #27ae60 100%);
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* Align player to bottom */
+    perspective: 1000px;
+    overflow: hidden;
+}
+
+/* Goal */
+.goal-container {
+    position: absolute;
+    top: 25%; /* Horizon line */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 250px;
+    perspective: 600px;
+    z-index: 1;
+}
+
+.goal-post {
+    width: 100%;
+    height: 100%;
+    border-top: 10px solid white;
+    border-left: 10px solid white;
+    border-right: 10px solid white;
+    position: relative;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+.net {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+        linear-gradient(white 1px, transparent 1px),
+        linear-gradient(90deg, white 1px, transparent 1px);
+    background-size: 20px 20px;
+    opacity: 0.3;
+    z-index: -1;
+}
+
+/* Shoot Zone */
+#shoot-zone {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    cursor: crosshair;
+    z-index: 10; /* Above keeper but below UI */
+}
+
+/* Characters */
+.goalkeeper {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 60px;
+    height: 120px;
+    transform: translateX(-50%);
+    transition: left 0.5s ease-out, transform 0.5s;
+    pointer-events: none; /* Let clicks pass through to shoot zone */
+}
+
+.player {
+    position: absolute;
+    bottom: 50px; /* Closer to camera */
+    left: 50%;
+    transform: translateX(-50%) scale(1.5); /* Bigger */
+    width: 60px;
+    height: 120px;
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* Character Parts */
+.head {
+    width: 40px;
+    height: 40px;
+    background: #ffdbac;
+    border-radius: 50%;
+    margin: 0 auto;
+    position: relative;
+}
+
+.body {
+    width: 60px;
+    height: 50px;
+    margin: 0 auto;
+    border-radius: 10px 10px 0 0;
+}
+
+.legs {
+    width: 60px;
+    height: 40px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+}
+
+.legs::before, .legs::after {
+    content: '';
+    width: 20px;
+    height: 100%;
+    background: white; /* Socks/Shorts */
+    display: block;
+}
+
+/* Kits */
+.galo-kit {
+    background: repeating-linear-gradient(
+        90deg,
+        var(--galo-black),
+        var(--galo-black) 10px,
+        var(--galo-white) 10px,
+        var(--galo-white) 20px
+    );
+}
+
+.cruzeiro-kit {
+    background: var(--cruzeiro-blue);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 10px;
+}
+.cruzeiro-kit::after {
+    content: '🦊'; /* Fox emoji or stars */
+    font-size: 20px;
+}
+
+/* Santa Hat */
+.santa-hat {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-bottom: 25px solid var(--christmas-red);
+    z-index: 2;
+}
+.santa-hat::after { /* White ball */
+    content: '';
+    position: absolute;
+    top: -5px; left: -5px;
+    width: 10px; height: 10px;
+    background: white;
+    border-radius: 50%;
+}
+.santa-hat::before { /* White brim */
+    content: '';
+    position: absolute;
+    bottom: -28px; left: -15px;
+    width: 30px; height: 8px;
+    background: white;
+    border-radius: 4px;
+}
+
+/* Ball */
+.ball {
+    width: 30px;
+    height: 30px;
+    background: radial-gradient(circle at 10px 10px, #fff, #ddd);
+    border-radius: 50%;
+    position: absolute;
+    bottom: 120px; /* On the penalty spot */
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+    z-index: 4;
+    pointer-events: none;
+    transition: all 0.5s ease-in;
+}
+
+/* Ball Animation Classes */
+.ball.shot {
+    /* Styles will be set by JS for target */
+    width: 15px; /* Get smaller as it goes away */
+    height: 15px;
+    z-index: 2; /* Go behind player but in front of net */
+}
+
+/* Snow */
+#snow-container {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 20;
+}
+.snowflake {
+    position: absolute;
+    top: -10px;
+    background: white;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    opacity: 0.8;
+    animation: fall linear infinite;
+}
+@keyframes fall {
+    to { transform: translateY(100vh); }
+}
+
+/* Victory Modal */
+#victory-modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+.victory-content {
+    background: white;
+    padding: 3rem;
+    border-radius: 20px;
+    text-align: center;
+    border: 5px solid gold;
+    animation: popIn 0.5s ease;
+}
+.victory-content h1 {
+    color: var(--christmas-red);
+    font-size: 3rem;
+}
+.victory-content button {
+    margin-top: 20px;
+    padding: 15px 30px;
+    background: var(--cruzeiro-blue);
+    color: white;
+    border: none;
+    font-size: 1.2rem;
+    border-radius: 5px;
+    cursor: pointer;
+}
