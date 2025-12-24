@@ -198,67 +198,105 @@ function handleShot(zone) {
     // Pegar posição do chute (0-8, grid 3x3)
     const zoneIndex = parseInt(zone.dataset.zone);
     
+    // Calcular posição alvo da bola baseada na zona
+    const targetPos = calculateBallTarget(zoneIndex);
+    
     // Animação do jogador chutando
     dom.player.classList.add('kicking');
 
-    // Animação da bola
-    setTimeout(() => {
-        animateBall(zoneIndex);
-    }, 200);
+    // Decisão: chute vai pra fora?
+    const isCorner = [0, 2, 6, 8].includes(zoneIndex);
+    const missChance = isCorner ? 0.12 : 0.05;
+    const didMiss = Math.random() < missChance;
 
     // Decisão do goleiro
-    const keeperSaves = Math.random() * 100 < CONFIG.difficultyPercent;
+    const keeperSaves = !didMiss && Math.random() * 100 < CONFIG.difficultyPercent;
     
     // Determinar direção do goleiro
-    let keeperDirection = 'center';
-    if (keeperSaves) {
-        // Goleiro pula na direção certa
-        if (zoneIndex % 3 === 0) keeperDirection = 'left';
-        else if (zoneIndex % 3 === 2) keeperDirection = 'right';
-        else keeperDirection = 'center';
+    let keeperDirection = decideKeeperDirection(zoneIndex, keeperSaves);
+
+    // Configurar CSS custom properties para a animação
+    if (didMiss) {
+        // Ajustar alvo para fora do gol
+        const missOffset = (zoneIndex % 3 === 0) ? -60 : (zoneIndex % 3 === 2) ? 60 : (Math.random() > 0.5 ? 80 : -80);
+        dom.ball.style.setProperty('--target-x', `${targetPos.x + missOffset}px`);
+        dom.ball.style.setProperty('--target-y', `${targetPos.y - 40}px`);
+        dom.ball.style.setProperty('--target-scale', '0.3');
     } else {
-        // Goleiro pula para direção errada
-        const wrongDirections = ['left', 'right', 'center'];
-        const correctDir = zoneIndex % 3 === 0 ? 'left' : (zoneIndex % 3 === 2 ? 'right' : 'center');
-        const wrongOptions = wrongDirections.filter(d => d !== correctDir);
-        keeperDirection = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
+        dom.ball.style.setProperty('--target-x', `${targetPos.x}px`);
+        dom.ball.style.setProperty('--target-y', `${targetPos.y}px`);
+        dom.ball.style.setProperty('--target-scale', '0.35');
     }
+
+    // Iniciar animação da bola após pequeno delay (timing do chute)
+    setTimeout(() => {
+        if (didMiss) {
+            dom.ballWrapper.classList.add('post-hit');
+        } else if (keeperSaves) {
+            dom.ballWrapper.classList.add('saved');
+        } else {
+            dom.ballWrapper.classList.add('shooting');
+            // Balançar a rede
+            setTimeout(() => {
+                document.querySelector('.net').classList.add('shake');
+            }, 500);
+        }
+    }, 150);
 
     // Animar goleiro
     setTimeout(() => {
         dom.goalkeeper.classList.add(`dive-${keeperDirection}`);
-    }, 150);
+    }, 200);
 
     // Verificar resultado
     setTimeout(() => {
-        checkResult(zoneIndex, keeperSaves);
-    }, CONFIG.animationDuration);
+        checkResult(zoneIndex, keeperSaves, didMiss);
+    }, 800);
 }
 
-function animateBall(zoneIndex) {
-    // Calcular posição final baseada na zona
-    const col = zoneIndex % 3; // 0 = esquerda, 1 = centro, 2 = direita
-    const row = Math.floor(zoneIndex / 3); // 0 = cima, 1 = meio, 2 = baixo
-
-    // Determinar se é gol ou fora (zonas 0, 2, 6, 8 têm chance de errar)
-    const isCorner = [0, 2, 6, 8].includes(zoneIndex);
-    const missChance = isCorner ? 0.15 : 0.05; // 15% de chance de errar nos cantos
+function calculateBallTarget(zoneIndex) {
+    // Grid 3x3: 
+    // 0 1 2  (topo)
+    // 3 4 5  (meio)
+    // 6 7 8  (baixo)
     
-    if (Math.random() < missChance) {
-        // Bola vai pra fora
-        dom.ballWrapper.dataset.result = 'miss';
-        dom.ballWrapper.classList.add('shooting');
+    const col = zoneIndex % 3; // 0=esquerda, 1=centro, 2=direita
+    const row = Math.floor(zoneIndex / 3); // 0=cima, 1=meio, 2=baixo
+    
+    // Calcular deslocamento X (-100 a 100 pixels do centro)
+    let targetX = 0;
+    if (col === 0) targetX = -85 + (Math.random() * 20 - 10);
+    else if (col === 2) targetX = 85 + (Math.random() * 20 - 10);
+    else targetX = (Math.random() * 30 - 15);
+    
+    // Calcular deslocamento Y (negativo = para cima)
+    // A bola precisa subir ~200-280px para chegar no gol
+    let targetY = -220; // base
+    if (row === 0) targetY = -270 + (Math.random() * 15);      // canto alto
+    else if (row === 1) targetY = -235 + (Math.random() * 15);  // meio
+    else targetY = -200 + (Math.random() * 15);                  // rasteiro
+    
+    return { x: targetX, y: targetY };
+}
+
+function decideKeeperDirection(zoneIndex, willSave) {
+    const col = zoneIndex % 3;
+    
+    if (willSave) {
+        // Goleiro pula na direção certa
+        if (col === 0) return 'left';
+        if (col === 2) return 'right';
+        return 'center';
     } else {
-        // Bola vai pro gol
-        dom.ballWrapper.classList.add('goal');
+        // Goleiro pula para direção errada
+        const correctDir = col === 0 ? 'left' : (col === 2 ? 'right' : 'center');
+        const allDirs = ['left', 'right', 'center'];
+        const wrongDirs = allDirs.filter(d => d !== correctDir);
+        return wrongDirs[Math.floor(Math.random() * wrongDirs.length)];
     }
 }
 
-function checkResult(zoneIndex, keeperSaves) {
-    // Verificar se foi pra fora
-    const isCorner = [0, 2, 6, 8].includes(zoneIndex);
-    const didMiss = Math.random() < (isCorner ? 0.1 : 0.03);
-
+function checkResult(zoneIndex, keeperSaves, didMiss) {
     if (didMiss) {
         // Errou o gol
         showResult('miss', getRandomJoke('fora'));
@@ -288,7 +326,7 @@ function checkResult(zoneIndex, keeperSaves) {
 
             // Verificar vitória
             if (state.revealed.every(x => x)) {
-                setTimeout(showVictory, 2000);
+                setTimeout(showVictory, 2500);
             }
         } else {
             showResult('goal', getRandomJoke('gol'));
@@ -348,9 +386,16 @@ function updateScore() {
 function resetShot() {
     // Limpar classes de animação
     dom.player.classList.remove('kicking');
-    dom.ballWrapper.classList.remove('shooting', 'goal');
-    dom.ballWrapper.removeAttribute('data-result');
+    dom.ballWrapper.classList.remove('shooting', 'saved', 'post-hit');
     dom.goalkeeper.classList.remove('dive-left', 'dive-right', 'dive-center');
+    
+    // Limpar animação da rede
+    document.querySelector('.net').classList.remove('shake');
+    
+    // Resetar posição da bola (removendo as custom properties)
+    dom.ball.style.removeProperty('--target-x');
+    dom.ball.style.removeProperty('--target-y');
+    dom.ball.style.removeProperty('--target-scale');
     
     // Limpar zona selecionada
     dom.zones.forEach(z => z.classList.remove('selected'));
