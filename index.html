@@ -2,97 +2,170 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pênaltis de Natal - Cruzeiro x Galo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <!-- Main App Container -->
-    <main id="app">
-
-        <!-- Game Canvas Layer -->
-        <div id="game-stage">
-
-            <!-- Stadium Background -->
-            <div class="stadium-bg">
-                <div class="sky"></div>
+    <div id="app">
+        <!-- Partículas de Neve -->
+        <div id="snow-container"></div>
+        
+        <!-- Tela do Jogo -->
+        <div id="game-screen">
+            <!-- Fundo do Estádio -->
+            <div class="stadium">
+                <div class="sky">
+                    <div class="star" style="top:5%;left:10%"></div>
+                    <div class="star" style="top:15%;left:30%"></div>
+                    <div class="star" style="top:8%;left:50%"></div>
+                    <div class="star" style="top:12%;left:70%"></div>
+                    <div class="star" style="top:6%;left:85%"></div>
+                </div>
                 <div class="stands"></div>
-                <div class="grass"></div>
+                <div class="field"></div>
             </div>
 
-            <!-- World Container for 3D Projection -->
-            <div id="world">
-                <!-- Goal -->
-                <div id="goal-container">
-                    <!-- Net (Back) -->
-                    <div class="net-back"></div>
-                    <!-- Posts -->
-                    <div class="post-left"></div>
-                    <div class="post-right"></div>
-                    <div class="crossbar"></div>
-                    <!-- Goalkeeper SVG Container -->
-                    <div id="keeper-container"></div>
+            <!-- Área do Gol -->
+            <div id="goal-area">
+                <!-- Rede -->
+                <div class="net"></div>
+                <!-- Estrutura do Gol -->
+                <div class="post left"></div>
+                <div class="post right"></div>
+                <div class="crossbar"></div>
+                
+                <!-- Zonas de Mira (3x3 grid) -->
+                <div id="target-zones">
+                    <div class="zone" data-zone="0"></div>
+                    <div class="zone" data-zone="1"></div>
+                    <div class="zone" data-zone="2"></div>
+                    <div class="zone" data-zone="3"></div>
+                    <div class="zone" data-zone="4"></div>
+                    <div class="zone" data-zone="5"></div>
+                    <div class="zone" data-zone="6"></div>
+                    <div class="zone" data-zone="7"></div>
+                    <div class="zone" data-zone="8"></div>
                 </div>
-
-                <!-- Ball -->
-                <div id="ball-container">
-                    <div id="ball-shadow"></div>
-                    <div id="ball"></div>
-                </div>
-
-                <!-- Player SVG Container -->
-                <div id="player-container"></div>
-            </div>
-
-            <!-- UI Overlay Layer -->
-            <div id="ui-layer">
-
-                <!-- Header -->
-                <header class="hud-header">
-                    <div class="score-board">
-                        <div id="word-display" class="word-slots"></div>
-                    </div>
-                </header>
-
-                <!-- Toast Messages -->
-                <div id="toast-container"></div>
-
-                <!-- Interaction Zone (Full Screen Touch) -->
-                <div id="touch-zone"></div>
-
-                <!-- Start/Login Screen -->
-                <div id="login-screen" class="modal active">
-                    <div class="modal-card">
-                        <h1 class="brand-title">NATAL EM<br>FAMÍLIA</h1>
-                        <p class="subtitle">Desafio de Pênaltis</p>
-                        <div class="input-wrapper">
-                            <input type="text" id="password-input" placeholder="Digite a senha..." autocomplete="off">
-                            <button id="start-btn">JOGAR</button>
+                
+                <!-- Goleiro -->
+                <div id="goalkeeper">
+                    <div class="keeper-body">
+                        <div class="keeper-head">
+                            <div class="santa-hat"></div>
                         </div>
-                        <p id="login-error" class="error-text hidden">Senha incorreta!</p>
+                        <div class="keeper-torso"></div>
+                        <div class="keeper-arms">
+                            <div class="arm left"></div>
+                            <div class="arm right"></div>
+                        </div>
+                        <div class="keeper-legs">
+                            <div class="leg left"></div>
+                            <div class="leg right"></div>
+                        </div>
+                        <div class="gloves">
+                            <div class="glove left"></div>
+                            <div class="glove right"></div>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Victory Screen -->
-                <div id="victory-screen" class="modal">
-                    <div class="modal-card victory-card">
-                        <div class="confetti-icon">🏆</div>
-                        <h1>PARABÉNS!</h1>
-                        <p>Você completou o nome:</p>
-                        <div class="final-word">NANDINHO</div>
-                        <p class="message">"Feliz Natal do seu Amigo Oculto!"</p>
-                        <button id="restart-btn">JOGAR NOVAMENTE</button>
+            <!-- Bola -->
+            <div id="ball-wrapper">
+                <div id="ball-shadow"></div>
+                <div id="ball">
+                    <div class="ball-pattern"></div>
+                </div>
+            </div>
+
+            <!-- Jogador -->
+            <div id="player">
+                <div class="player-body">
+                    <div class="player-head">
+                        <div class="santa-hat"></div>
+                    </div>
+                    <div class="player-torso">
+                        <span class="number">10</span>
+                    </div>
+                    <div class="player-legs">
+                        <div class="leg left"></div>
+                        <div class="leg right"></div>
                     </div>
                 </div>
+            </div>
 
+            <!-- HUD -->
+            <div id="hud">
+                <div class="score-display">
+                    <div class="team cruzeiro">
+                        <div class="shield">🦊</div>
+                        <span id="score-cruzeiro">0</span>
+                    </div>
+                    <div class="vs">VS</div>
+                    <div class="team galo">
+                        <span id="score-galo">0</span>
+                        <div class="shield">🐓</div>
+                    </div>
+                </div>
+                
+                <div class="word-progress">
+                    <div id="word-display"></div>
+                    <p class="hint">Marque gols para revelar o nome!</p>
+                </div>
+            </div>
+
+            <!-- Indicador de Instrução -->
+            <div id="instruction">
+                <div class="arrow">👆</div>
+                <p>Toque onde quer chutar!</p>
+            </div>
+
+            <!-- Mensagens de Resultado -->
+            <div id="result-message"></div>
+
+            <!-- Efeito de Confete -->
+            <div id="confetti-container"></div>
+        </div>
+
+        <!-- Tela de Login -->
+        <div id="login-screen" class="screen active">
+            <div class="login-card">
+                <div class="christmas-lights"></div>
+                <h1>🎄 NATAL EM FAMÍLIA 🎄</h1>
+                <h2>Desafio de Pênaltis</h2>
+                <div class="vs-badge">
+                    <span class="team-badge cruzeiro">🦊</span>
+                    <span>VS</span>
+                    <span class="team-badge galo">🐓</span>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="password-input" placeholder="Digite a senha secreta..." autocomplete="off">
+                    <button id="start-btn">⚽ COMEÇAR!</button>
+                </div>
+                <p id="error-msg" class="error hidden">❌ Senha incorreta! Tente novamente.</p>
+                <p class="footer-text">Cruzeiro Cabuloso vs Galo Carijó</p>
             </div>
         </div>
 
-    </main>
+        <!-- Tela de Vitória -->
+        <div id="victory-screen" class="screen">
+            <div class="victory-card">
+                <div class="trophy">🏆</div>
+                <h1>PARABÉNS!</h1>
+                <p>Você descobriu o nome do seu Amigo Oculto:</p>
+                <div class="revealed-name" id="final-name"></div>
+                <div class="message-box">
+                    <p>🎁 Feliz Natal! 🎁</p>
+                    <p class="sub">Com carinho do seu Amigo Oculto</p>
+                </div>
+                <button id="play-again-btn">🔄 Jogar Novamente</button>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
