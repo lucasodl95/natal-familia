@@ -151,46 +151,37 @@ function handleInput(e) {
     const rect = dom.touchZone.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
 
-    // Determine screen height scaling factor
-    // Goal is at ~35% from top. Ball starts at ~82% from top.
-    // Aim for the NET, not the crossbar. Reduce distance slightly.
-    const screenHeight = rect.height;
-    const visualDistanceY = screenHeight * 0.32;
-
-    // Physics Calibration
-    // We project 3D World Y to Screen Y using: screenY = worldY * scale
-    // At Goal Z (600), scale is 0.5.
-    // So we need: worldY_at_goal * 0.5 = -visualDistanceY
-    // worldY_at_goal = -2 * visualDistanceY
-
-    // Physics Time: T = GOAL_Z / vz
-    // worldY = vy * T + 0.5 * G * T^2
-
-    // Let's pick a constant VZ (speed)
-    const VZ = 30; // Faster shot
-    const T = GOAL_Z / VZ; // 20 frames
-
-    // We need vy such that:
-    // vy * 20 + 0.5 * 0.6 * 400 = -2 * visualDistanceY
-    // vy * 20 + 120 = -2 * visualDistanceY
-    // vy = (-2 * visualDistanceY - 120) / 20
-
-    // Example: Screen height 800px. dist = 376px.
-    // worldY needed = -752.
-    // -752 - 120 = -872. / 20 = -43.6.
-
-    const requiredVy = (-2 * visualDistanceY - 120) / T;
-
     // Center of screen
     const centerX = rect.width / 2;
+    const screenHeight = rect.height;
 
-    // X Logic:
-    const relativeX = (clickX - centerX) / (rect.width / 2); // -1 to 1
-    // Scale X speed based on width to ensure we can reach corners
-    STATE.ball.vx = relativeX * 18;
+    // Ball origin (approx 80% of screen height from top based on CSS bottom:18%)
+    const ballOriginY = screenHeight * 0.80;
 
+    // Input Delta
+    // X: Normalize to width (-1 to 1)
+    const relativeX = (clickX - centerX) / (rect.width / 2);
+
+    // Y: Distance from ball origin (negative is up)
+    const clickY = e.clientY - rect.top;
+    const deltaY = clickY - ballOriginY;
+
+    // Calibration
+    // X Sensitivity:
+    // Edge of screen (relativeX = 1) -> World X = ~360 (Miss). Goal is 280.
+    // This allows shooting wide.
+    STATE.ball.vx = relativeX * 25;
+
+    // Y Sensitivity:
+    // Target World Y = DeltaY * 2.0 (Exact visual match since Scale=0.5 at Goal)
+    const targetWorldY = deltaY * 2.0;
+
+    // Calculate required Vy
+    const VZ = 30;
+    const T = GOAL_Z / VZ;
+
+    STATE.ball.vy = (targetWorldY - 120) / T;
     STATE.ball.vz = VZ;
-    STATE.ball.vy = requiredVy;
 
     STATE.ball.active = true;
     STATE.ball.x = 0;
@@ -198,7 +189,7 @@ function handleInput(e) {
     STATE.ball.z = 0;
 
     // Keeper AI Decision
-    const keeperWillSave = Math.random() < 0.35; // 35% chance
+    const keeperWillSave = Math.random() < 0.50; // 50% chance (increased difficulty)
     // Predict ball X at goal Z
     const timeToGoal = GOAL_Z / STATE.ball.vz;
     const predictedX = STATE.ball.vx * timeToGoal;
@@ -245,7 +236,7 @@ function gameLoop() {
         const keeperScale = 600 / (600 + GOAL_Z); // Goal distance
         // Lerp keeper x
         const kX = parseFloat(dom.keeper.getAttribute('data-x') || 0);
-        const newKX = kX + (STATE.keeper.targetX - kX) * 0.15; // Faster dive
+        const newKX = kX + (STATE.keeper.targetX - kX) * 0.30; // Very Fast dive (Buffed)
         dom.keeper.setAttribute('data-x', newKX);
         // Animate dive lean
         const lean = (newKX - kX) * 1.5; // Tilt based on velocity
@@ -265,15 +256,13 @@ function checkResult(x, y) {
     // Goal width 280. Center 0. Range -140 to 140.
     // Goal height 100. Base 0. Range -100 to 0 (y is up/negative).
 
-    // Keeper Collision (Simplified box)
+    // Keeper Collision (Simplified box with Jumping Reach)
     const keeperX = parseFloat(dom.keeper.getAttribute('data-x') || 0);
-    // Keeper width in world units: Visual 80px / 0.5 = 160 width?
-    // Let's say +/- 80 world units.
-    const caught = (x > keeperX - 80 && x < keeperX + 80) && (y > -200 && y < 0);
+    // Keeper width +/- 90 (Wider reach), Height -550 (Can jump to top corner)
+    const caught = (x > keeperX - 90 && x < keeperX + 90) && (y > -550 && y < 0);
 
-    // Goal world bounds: +/- 280 X, -160 Y
-    // Expanded height to catch "net" shots and high balls that visually look in
-    const inGoal = (x > -GOAL_WORLD_WIDTH_HALF && x < GOAL_WORLD_WIDTH_HALF) && (y > -600 && y < 0);
+    // Goal world bounds: +/- 250 X (Hit post if 260+), -650 Y (Hit bar if 660+)
+    const inGoal = (x > -250 && x < 250) && (y > -650 && y < 0);
 
     if (caught) {
         showToast("DEFESAÇA! O Galo pegou!", 'miss');
