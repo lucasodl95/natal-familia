@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pênaltis de Natal - Cruzeiro x Galo</title>
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Background Ambience -->
+    <div class="stadium-bg">
+        <div class="crowd"></div>
+        <div class="spotlights"></div>
+    </div>
+
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="overlay-screen">
+        <div class="glass-panel login-box">
+            <h1 class="logo-text">🔒 ÁREA RESTRITA</h1>
+            <p>Digite a senha do Amigo Oculto:</p>
+            <div class="input-group">
+                <input type="text" id="password-input" placeholder="Senha..." autocomplete="off">
+                <button id="login-btn">ENTRAR</button>
+            </div>
+            <p id="error-msg" class="error-msg hidden">Senha incorreta!</p>
+        </div>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container" class="hidden">
+
+        <!-- Header / Scoreboard -->
+        <header class="glass-panel header-bar">
+            <div class="header-content">
+                <h1 class="game-title">🎄 NATAL DO NANDINHO 🎄</h1>
+                <div class="scoreboard-container">
+                    <div id="word-slots" class="word-slots"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Toast Message Area -->
+        <div id="toast-area" class="toast-area"></div>
+
+        <!-- Game Field -->
+        <div class="field-stage">
+
+            <!-- Snow -->
+            <div id="snow-container"></div>
+
+            <!-- Goal Complex -->
+            <div class="goal-wrapper">
+                <div class="goal-post">
+                    <div class="net-mesh"></div>
+                    <div class="post-bar left"></div>
+                    <div class="post-bar right"></div>
+                    <div class="post-bar top"></div>
+
+                    <!-- Goalkeeper -->
+                    <div id="goalkeeper" class="character goalkeeper">
+                        <div class="santa-hat"></div>
+                        <div class="char-head"></div>
+                        <div class="char-body galo-kit">
+                            <span class="kit-logo">🐔</span>
+                        </div>
+                        <div class="char-legs"></div>
+                        <div class="gloves"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ball -->
+            <div id="ball-shadow" class="ball-shadow"></div>
+            <div id="ball" class="ball">
+                <div class="ball-texture"></div>
+            </div>
+
+            <!-- Player (Kicker) -->
+            <div id="player" class="character player">
+                <div class="santa-hat"></div>
+                <div class="char-head"></div>
+                <div class="char-body cruzeiro-kit">
+                    <span class="kit-logo">🦊</span>
+                    <span class="kit-number">10</span>
+                </div>
+                <div class="char-legs"></div>
+                <div class="boots"></div>
+            </div>
+
+            <!-- Click area -->
+            <div id="shoot-zone"></div>
+
+        </div>
+
+    </div>
+
+    <!-- Victory Modal -->
+    <div id="victory-modal" class="overlay-screen hidden">
+        <div class="glass-panel victory-content">
+            <div class="trophy-icon">🏆</div>
+            <h1>PARABÉNS NANDINHO!</h1>
+            <p class="sub-text">Seu Amigo Oculto te deseja um Feliz Natal!</p>
+            <div class="final-word-reveal">
+                <span>N</span><span>A</span><span>N</span><span>D</span><span>I</span><span>N</span><span>H</span><span>O</span>
+            </div>
+            <p class="footer-msg">"O maior de Minas manda lembranças!"</p>
+            <button class="restart-btn" onclick="location.reload()">JOGAR NOVAMENTE</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
