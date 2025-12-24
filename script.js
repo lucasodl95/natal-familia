@@ -56,20 +56,8 @@ const ASSETS = {
 
 // Physics Constants
 const GRAVITY = 0.6;
-const FRICTION = 0.98;
+const FRICTION = 0.99;
 const GOAL_Z = 600;
-// Visual goal is 280px wide. At Z=600 (scale 0.5), it covers 560 units in physics space?
-// No, screen = world * scale.
-// If visual width is 280, and scale is 0.5, then world width is 280 / 0.5 = 560.
-// So bounds are -280 to +280?
-// Actually simpler: Let's define Goal in world units, then scale it visually.
-// If CSS width is 280px, that's fixed on screen (relative to container).
-// At Z=600, scale is 0.5.
-// So for the ball (scale 0.5) to look like it's inside a 280px wide goal,
-// its screen X must be within -140 and 140.
-// screenX = worldX * 0.5 => worldX must be within -280 and 280.
-const GOAL_WORLD_WIDTH_HALF = 280;
-const GOAL_WORLD_HEIGHT = 160;
 
 // Game State
 const STATE = {
@@ -77,7 +65,8 @@ const STATE = {
     targetWord: "NANDINHO",
     revealed: Array(8).fill(false),
     ball: { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, active: false },
-    keeper: { x: 0, targetX: 0 },
+    keeper: { x: 0, y: 0, targetX: 0, targetY: 0, speed: 0.1 },
+    input: { isDragging: false, startX: 0, startY: 0, currentX: 0, currentY: 0 },
     isPlaying: false,
     isResetting: false
 };
@@ -94,6 +83,7 @@ const JOKES = [
 const dom = {
     ball: document.getElementById('ball'),
     ballContainer: document.getElementById('ball-container'),
+    aimLine: document.getElementById('aim-line'),
     ballShadow: document.getElementById('ball-shadow'),
     keeper: document.getElementById('keeper-container'),
     player: document.getElementById('player-container'),
@@ -116,7 +106,18 @@ function init() {
     document.getElementById('start-btn').addEventListener('click', attemptLogin);
     document.getElementById('password-input').addEventListener('keyup', e => { if(e.key==='Enter') attemptLogin() });
     document.getElementById('restart-btn').addEventListener('click', () => location.reload());
-    dom.touchZone.addEventListener('click', handleInput);
+
+    // Drag Listeners (Touch & Mouse)
+    const zone = dom.touchZone;
+
+    zone.addEventListener('mousedown', startDrag);
+    zone.addEventListener('touchstart', startDrag, {passive: false});
+
+    window.addEventListener('mousemove', updateDrag);
+    window.addEventListener('touchmove', updateDrag, {passive: false});
+
+    window.addEventListener('mouseup', endDrag);
+    window.addEventListener('touchend', endDrag);
 
     // Loop
     requestAnimationFrame(gameLoop);
@@ -144,60 +145,132 @@ function renderWord() {
     });
 }
 
-function handleInput(e) {
+// --- Input Handling (Slingshot) ---
+
+function getCoord(e) {
+    if (e.touches && e.touches.length > 0) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+    return { x: e.clientX, y: e.clientY };
+}
+
+function startDrag(e) {
     if (!STATE.isPlaying || STATE.ball.active || STATE.isResetting) return;
+    e.preventDefault();
+    const pos = getCoord(e);
+    STATE.input.isDragging = true;
+    STATE.input.startX = pos.x;
+    STATE.input.startY = pos.y;
+    STATE.input.currentX = pos.x;
+    STATE.input.currentY = pos.y;
+    dom.aimLine.style.display = 'block';
+}
 
-    // Calculate shot direction based on click
-    const rect = dom.touchZone.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
+function updateDrag(e) {
+    if (!STATE.input.isDragging) return;
+    const pos = getCoord(e);
+    STATE.input.currentX = pos.x;
+    STATE.input.currentY = pos.y;
 
-    // Center of screen
-    const centerX = rect.width / 2;
-    const screenHeight = rect.height;
+    // Calculate Drag Vector
+    // Dragging DOWN/BACK (Positive Y diff) -> Shoot UP
+    // Dragging LEFT (Negative X diff) -> Shoot RIGHT (Usually inverse, but Slingshot logic: pull back)
+    // Actually, usually you drag "back" to shoot "forward".
+    // Screen coords: Top (0) to Bottom (High).
+    // Ball is at bottom. Dragging DOWN (higher Y) is "pulling back".
 
-    // Ball origin (approx 80% of screen height from top based on CSS bottom:18%)
-    const ballOriginY = screenHeight * 0.80;
+    const dx = STATE.input.currentX - STATE.input.startX;
+    const dy = STATE.input.currentY - STATE.input.startY;
 
-    // Input Delta
-    // X: Normalize to width (-1 to 1)
-    const relativeX = (clickX - centerX) / (rect.width / 2);
+    // Visual update of Aim Line
+    // Line originates from ball center.
+    // Length depends on drag distance.
+    // Rotation depends on angle.
 
-    // Y: Distance from ball origin (negative is up)
-    const clickY = e.clientY - rect.top;
-    const deltaY = clickY - ballOriginY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const maxDist = 200; // Cap visual length
+    const visualLen = Math.min(dist, maxDist);
+    const angle = Math.atan2(dy, dx);
+
+    // If I drag DOWN (positive dy), angle is ~90deg. Line points down.
+    // I want to see where I'm shooting (UP).
+    // So the aiming line should point opposite to drag.
+
+    dom.aimLine.style.height = `${visualLen}px`;
+    dom.aimLine.style.transform = `rotate(${angle + Math.PI/2 + Math.PI}rad)`; // Point opposite
+    // Opacity based on power
+    dom.aimLine.style.opacity = Math.min(1, dist / 100);
+}
+
+function endDrag(e) {
+    if (!STATE.input.isDragging) return;
+    STATE.input.isDragging = false;
+    dom.aimLine.style.display = 'none';
+
+    const dx = STATE.input.currentX - STATE.input.startX;
+    const dy = STATE.input.currentY - STATE.input.startY;
+
+    // Logic: Dragging DOWN (Positive dy) creates Forward Velocity (Positive Z) and Upward Velocity (Negative Y).
+    // Dragging RIGHT (Positive dx) creates Left Velocity (Negative X) -> Opposites.
+
+    // Threshold to shoot (avoid accidental clicks)
+    if (Math.sqrt(dx*dx + dy*dy) < 30) return;
 
     // Calibration
-    // X Sensitivity:
-    // Edge of screen (relativeX = 1) -> World X = ~360 (Miss). Goal is 280.
-    // This allows shooting wide.
-    STATE.ball.vx = relativeX * 25;
+    const power = Math.min(Math.sqrt(dx*dx + dy*dy), 300) / 10; // 0 to 30
 
-    // Y Sensitivity:
-    // Target World Y = DeltaY * 2.0 (Exact visual match since Scale=0.5 at Goal)
-    const targetWorldY = deltaY * 2.0;
+    // X: Drag Right -> Shoot Left
+    // Factor: 1.5
+    STATE.ball.vx = -dx * 0.15;
 
-    // Calculate required Vy
-    const VZ = 30;
-    const T = GOAL_Z / VZ;
+    // Y: Drag Down -> Shoot Up
+    // We need negative Vy.
+    // Factor: 2.0
+    STATE.ball.vy = -dy * 0.35;
 
-    STATE.ball.vy = (targetWorldY - 120) / T;
-    STATE.ball.vz = VZ;
+    // Z: Forward Power.
+    // Mostly based on drag distance (dy mainly, but magnitude).
+    // Minimum speed 15, Max 45.
+    STATE.ball.vz = Math.max(15, power * 1.5);
 
     STATE.ball.active = true;
-    STATE.ball.x = 0;
-    STATE.ball.y = 0;
-    STATE.ball.z = 0;
 
-    // Keeper AI Decision
-    const keeperWillSave = Math.random() < 0.50; // 50% chance (increased difficulty)
-    // Predict ball X at goal Z
-    const timeToGoal = GOAL_Z / STATE.ball.vz;
-    const predictedX = STATE.ball.vx * timeToGoal;
+    // Predict Shot for Keeper
+    predictShot();
+}
 
-    STATE.keeper.targetX = keeperWillSave ? predictedX : (Math.random() - 0.5) * 250;
+function predictShot() {
+    // Simulate physics to find X, Y at Goal Z
+    let tX = 0, tY = 0, tZ = 0;
+    let tVx = STATE.ball.vx;
+    let tVy = STATE.ball.vy;
+    let tVz = STATE.ball.vz;
 
-    // Hide Player (he kicked it)
-    // dom.player.style.opacity = '0';
+    // Simulation loop
+    while (tZ < GOAL_Z) {
+        tX += tVx;
+        tY += tVy;
+        tZ += tVz;
+        tVy += GRAVITY;
+        tVz *= FRICTION; // Air resistance logic if any
+    }
+
+    // tX and tY are the predicted intercept coordinates
+    STATE.keeper.targetX = tX;
+    STATE.keeper.targetY = tY;
+
+    // Introduce Keeper Logic / Difficulty
+    // Reaction Delay
+    setTimeout(() => {
+        // Difficulty Check:
+        // If shot is very far in corner, keeper might not reach.
+        // Keeper speed limited.
+
+        // Random mistake factor (20% chance to misread X)
+        if (Math.random() < 0.2) {
+             STATE.keeper.targetX += (Math.random() - 0.5) * 200;
+        }
+    }, 200); // 200ms reaction delay
 }
 
 function gameLoop() {
@@ -207,80 +280,98 @@ function gameLoop() {
         STATE.ball.y += STATE.ball.vy;
         STATE.ball.z += STATE.ball.vz;
         STATE.ball.vy += GRAVITY;
+        // STATE.ball.vx *= FRICTION; // Optional drag
 
-        // Visual Update
-        // Project 3D to 2D
-        // Focal Length approx 600
+        // Visual Update (3D Projection)
         const scale = 600 / (600 + STATE.ball.z);
         const screenX = STATE.ball.x * scale;
         const screenY = STATE.ball.y * scale;
 
-        // Move Ball DOM
-        // Initial offset (center bottom) is handled by container position
-        // We move RELATIVE to container
-        // Y needs to be inverted for CSS (Up is negative in physics, negative in CSS translate too)
-
-        // Ball grows smaller with distance (scale)
         dom.ball.style.transform = `translate(${screenX}px, ${screenY}px) scale(${scale})`;
 
-        // Shadow: Sticks to ground (y=0 in physics world, but we need screenY for ground)
-        // Ground Y in 3D is 0 (relative to ball start).
-        // Ball Y is negative (up).
-        // Shadow stays at Y=0.
-        const shadowScale = scale * Math.max(0, 1 + (STATE.ball.y / 200)); // Smaller when ball high
-        const shadowY = 0; // Ground level
+        const shadowScale = scale * Math.max(0, 1 + (STATE.ball.y / 200));
+        const shadowY = 0;
         dom.ballShadow.style.transform = `translate(${screenX}px, ${shadowY}px) scale(${shadowScale})`;
         dom.ballShadow.style.opacity = Math.max(0, 1 + (STATE.ball.y / 100));
 
-        // Keeper Movement (Lerp)
-        const keeperScale = 600 / (600 + GOAL_Z); // Goal distance
-        // Lerp keeper x
-        const kX = parseFloat(dom.keeper.getAttribute('data-x') || 0);
-        const newKX = kX + (STATE.keeper.targetX - kX) * 0.30; // Very Fast dive (Buffed)
-        dom.keeper.setAttribute('data-x', newKX);
-        // Animate dive lean
-        const lean = (newKX - kX) * 1.5; // Tilt based on velocity
-        dom.keeper.style.transform = `translateX(calc(-50% + ${newKX}px)) rotate(${lean}deg)`;
+        // Keeper Animation
+        updateKeeper();
 
         // Collision Check
         if (STATE.ball.z >= GOAL_Z) {
             checkResult(STATE.ball.x, STATE.ball.y);
             STATE.ball.active = false;
         }
+
+        // Floor collision (Bounce?) - For now just stop if too low before goal
+        if (STATE.ball.y > 0 && STATE.ball.z < GOAL_Z - 50) {
+             STATE.ball.y = 0;
+             STATE.ball.vy = -STATE.ball.vy * 0.6; // Bounce
+        }
     }
     requestAnimationFrame(gameLoop);
 }
 
+function updateKeeper() {
+    const kX = parseFloat(dom.keeper.getAttribute('data-x') || 0);
+    const kY = parseFloat(dom.keeper.getAttribute('data-y') || 0);
+
+    // Move towards target
+    // Speed factor
+    const speed = 0.15; // Smooth lerp
+
+    // Clamp Target X to Goal width (keeper stays in goal)
+    const clampedTargetX = Math.max(-250, Math.min(250, STATE.keeper.targetX));
+    const clampedTargetY = Math.min(0, Math.max(-300, STATE.keeper.targetY)); // Jump/Crouch limits
+
+    const newKX = kX + (clampedTargetX - kX) * speed;
+    const newKY = kY + (clampedTargetY - kY) * speed;
+
+    dom.keeper.setAttribute('data-x', newKX);
+    dom.keeper.setAttribute('data-y', newKY);
+
+    // Visual Transform
+    // Rotate based on X movement
+    const lean = (newKX - kX) * 2;
+    // Translate Y for jumping
+    // Visual Y for keeper is usually bottom-aligned.
+    // If newKY is negative (up), we translate Y.
+    dom.keeper.style.transform = `translate(calc(-50% + ${newKX}px), ${newKY}px) rotate(${lean}deg)`;
+}
+
 function checkResult(x, y) {
-    // Goal Dimensions (approx in physics units at goal Z)
-    // Goal width 280. Center 0. Range -140 to 140.
-    // Goal height 100. Base 0. Range -100 to 0 (y is up/negative).
+    // Goal Dimensions
+    // Width +/- 260. Height -680 (Top bar)
 
-    // Keeper Collision (Simplified box with Jumping Reach)
-    const keeperX = parseFloat(dom.keeper.getAttribute('data-x') || 0);
-    // Keeper width +/- 90 (Wider reach), Height -550 (Can jump to top corner)
-    const caught = (x > keeperX - 90 && x < keeperX + 90) && (y > -550 && y < 0);
+    // Keeper Collision (Dynamic Box based on position)
+    const kX = parseFloat(dom.keeper.getAttribute('data-x') || 0);
+    const kY = parseFloat(dom.keeper.getAttribute('data-y') || 0);
 
-    // Goal world bounds: +/- 250 X (Hit post if 260+), -650 Y (Hit bar if 660+)
-    const inGoal = (x > -250 && x < 250) && (y > -650 && y < 0);
+    // Keeper Body Box
+    // Width +/- 60, Height 150 (from kY)
+    // Ball relative to keeper center
 
-    if (caught) {
+    // Visual Keeper is 100px wide?
+    // Hitbox: X range [kX - 80, kX + 80]
+    // Hitbox: Y range [kY - 180, kY] (Height of keeper + jump)
+
+    const hitKeeper = (x > kX - 80 && x < kX + 80) && (y > kY - 200 && y < kY + 50);
+
+    const inGoal = (x > -260 && x < 260) && (y > -680 && y < 0);
+
+    if (hitKeeper) {
         showToast("DEFESAÇA! O Galo pegou!", 'miss');
         resetBall();
     } else if (inGoal) {
-        // Goal!
+        // Goal
         const joke = JOKES[Math.floor(Math.random() * JOKES.length)];
-        // Reveal letter
         const idx = STATE.revealed.findIndex(x => !x);
-
-        // Ordinals
         const ordinals = ["Primeira", "Segunda", "Terceira", "Quarta", "Quinta", "Sexta", "Sétima", "Oitava"];
 
         if (idx !== -1) {
             STATE.revealed[idx] = true;
             const letter = STATE.targetWord[idx];
             const ord = ordinals[idx] || (idx+1)+"ª";
-
             showToast(`GOLAÇO! ${ord} letra: '${letter}'!\n${joke}`, 'goal');
             renderWord();
             if (STATE.revealed.every(x => x)) {
@@ -291,8 +382,7 @@ function checkResult(x, y) {
         }
         resetBall();
     } else {
-        // Miss
-        showToast("PRA FORA! Mirou na Lagoa!", 'miss');
+        showToast("PRA FORA! Isolou!", 'miss');
         resetBall();
     }
 }
@@ -317,18 +407,18 @@ function resetBall() {
         STATE.ball.vx = 0;
         STATE.ball.vy = 0;
         STATE.ball.vz = 0;
+
+        // Reset Keeper
+        STATE.keeper.targetX = 0;
+        STATE.keeper.targetY = 0;
+
         dom.ball.style.transform = `translate(-50%, -50%) scale(1)`;
         dom.ballShadow.style.transform = `translate(-50%, 0)`;
         dom.ballShadow.style.opacity = '1';
-
-        // Reset keeper
-        STATE.keeper.targetX = 0;
-        dom.keeper.setAttribute('data-x', 0);
-        dom.keeper.style.transform = `translateX(-50%)`;
 
         STATE.isResetting = false;
     }, 1500);
 }
 
 init();
-// Version: Final Release (Title Fix)
+// Version: Slingshot Mechanics v1
