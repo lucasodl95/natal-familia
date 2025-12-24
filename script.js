@@ -236,7 +236,7 @@ function gameLoop() {
         const keeperScale = 600 / (600 + GOAL_Z); // Goal distance
         // Lerp keeper x
         const kX = parseFloat(dom.keeper.getAttribute('data-x') || 0);
-        const newKX = kX + (STATE.keeper.targetX - kX) * 0.15; // Faster dive
+        const newKX = kX + (STATE.keeper.targetX - kX) * 0.30; // Very Fast dive (Buffed)
         dom.keeper.setAttribute('data-x', newKX);
         // Animate dive lean
         const lean = (newKX - kX) * 1.5; // Tilt based on velocity
@@ -256,15 +256,13 @@ function checkResult(x, y) {
     // Goal width 280. Center 0. Range -140 to 140.
     // Goal height 100. Base 0. Range -100 to 0 (y is up/negative).
 
-    // Keeper Collision (Simplified box)
+    // Keeper Collision (Simplified box with Jumping Reach)
     const keeperX = parseFloat(dom.keeper.getAttribute('data-x') || 0);
-    // Keeper width in world units: Visual 80px / 0.5 = 160 width?
-    // Let's say +/- 80 world units.
-    const caught = (x > keeperX - 80 && x < keeperX + 80) && (y > -200 && y < 0);
+    // Keeper width +/- 90 (Wider reach), Height -550 (Can jump to top corner)
+    const caught = (x > keeperX - 90 && x < keeperX + 90) && (y > -550 && y < 0);
 
-    // Goal world bounds: +/- 280 X, -160 Y
-    // Expanded height to catch "net" shots (up to -700) but miss high ones
-    const inGoal = (x > -GOAL_WORLD_WIDTH_HALF && x < GOAL_WORLD_WIDTH_HALF) && (y > -700 && y < 0);
+    // Goal world bounds: +/- 250 X (Hit post if 260+), -650 Y (Hit bar if 660+)
+    const inGoal = (x > -250 && x < 250) && (y > -650 && y < 0);
 
     if (caught) {
         showToast("DEFESAÇA! O Galo pegou!", 'miss');
