@@ -31,24 +31,33 @@ const passwordInput = document.getElementById('password-input');
 const loginBtn = document.getElementById('login-btn');
 const errorMsg = document.getElementById('error-msg');
 const wordSlots = document.getElementById('word-slots');
-const messageBox = document.getElementById('message-box');
+const toastArea = document.getElementById('toast-area');
 const ball = document.getElementById('ball');
+const ballShadow = document.getElementById('ball-shadow');
 const goalkeeper = document.getElementById('goalkeeper');
 const victoryModal = document.getElementById('victory-modal');
 const shootZone = document.getElementById('shoot-zone');
+const fieldStage = document.querySelector('.field-stage');
+const netMesh = document.querySelector('.net-mesh');
 
 // Initialization
 function init() {
     loginBtn.addEventListener('click', checkPassword);
     shootZone.addEventListener('click', handleShoot);
 
-    // Add enter key support for password
     passwordInput.addEventListener('keyup', (e) => {
         if (e.key === 'Enter') checkPassword();
     });
 
     renderWord();
     startSnow();
+
+    // Idle animation for Keeper
+    setInterval(() => {
+        if(isGameActive && !isShooting) {
+            goalkeeper.style.transform = `translateX(-50%) translateY(${Math.random() * 5}px)`;
+        }
+    }, 1000);
 }
 
 // Password Logic
@@ -57,11 +66,16 @@ function checkPassword() {
     const cleanInput = input.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
     if (cleanInput === PASSWORD) {
-        loginOverlay.classList.add('hidden');
-        gameContainer.classList.remove('hidden');
-        isGameActive = true;
+        loginOverlay.style.opacity = '0';
+        setTimeout(() => {
+            loginOverlay.classList.add('hidden');
+            gameContainer.classList.remove('hidden');
+            isGameActive = true;
+        }, 500);
     } else {
         errorMsg.classList.remove('hidden');
+        passwordInput.classList.add('shake');
+        setTimeout(() => passwordInput.classList.remove('shake'), 500);
         passwordInput.value = '';
     }
 }
@@ -74,24 +88,31 @@ function renderWord() {
         slot.className = 'slot';
         if (revealedMask[i]) {
             slot.innerText = TARGET_WORD[i];
-            slot.style.background = '#87CEEB';
+            slot.classList.add('revealed');
         } else {
-            slot.innerText = '_';
+            slot.innerText = '';
         }
         wordSlots.appendChild(slot);
     }
 }
 
-// Show Message
-function showMessage(msg, type = 'neutral') {
-    messageBox.innerText = msg;
-    messageBox.classList.remove('hidden');
-    messageBox.style.color = type === 'good' ? '#006400' : (type === 'bad' ? '#d42426' : '#333');
+// Show Toast Message
+function showToast(msg, type) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerText = msg;
 
-    // Hide after 3 seconds
+    // Remove old toasts
+    toastArea.innerHTML = '';
+    toastArea.appendChild(toast);
+
+    // Sound effect simulation (Vibration)
+    if (navigator.vibrate) navigator.vibrate(type === 'goal' ? 200 : 50);
+
     setTimeout(() => {
-        messageBox.classList.add('hidden');
-    }, 4000);
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
 }
 
 // Utility for ordinals
@@ -106,21 +127,32 @@ function handleShoot(e) {
 
     isShooting = true;
 
-    // Ball Animation Calculation
-    const goalContainer = document.querySelector('.goal-container');
-    const goalRect = goalContainer.getBoundingClientRect();
-    const ballStartRect = ball.getBoundingClientRect();
+    // Dimensions
+    const goalWrapper = document.querySelector('.goal-wrapper');
+    const goalRect = goalWrapper.getBoundingClientRect();
+    const ballRect = ball.getBoundingClientRect();
+
+    // Calculate destination relative to Ball's start position
+    // We want to map the click to the goal plane.
 
     // Visual Destination
-    const deltaX = e.clientX - (ballStartRect.left + ballStartRect.width/2);
-    const deltaY = e.clientY - (ballStartRect.top + ballStartRect.height/2);
+    const deltaX = e.clientX - (ballRect.left + ballRect.width/2);
+    // Move up (negative Y). Fixed distance visually to goal line
+    const deltaY = -150; // Approximating depth
 
-    ball.style.transition = 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-    ball.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(0.5)`;
+    // Let's rely on the click Y too, but clamp it?
+    // Actually, just using click Y for visual height is better.
+    const visualDeltaY = e.clientY - (ballRect.top + ballRect.height/2);
+
+    // Apply Animation
+    ball.style.transform = `translate(${deltaX}px, ${visualDeltaY}px) scale(0.4)`;
     ball.classList.add('shot');
 
+    // Shadow Logic
+    ballShadow.style.transform = `translate(${deltaX}px, ${visualDeltaY + 80}px) scale(0.2)`;
+    ballShadow.style.opacity = '0';
+
     // Logic: Hit or Miss?
-    // Check if click is inside goal rect
     const isOnTarget = (
         e.clientX >= goalRect.left &&
         e.clientX <= goalRect.right &&
@@ -128,43 +160,48 @@ function handleShoot(e) {
         e.clientY <= goalRect.bottom
     );
 
-    // AI Logic
+    // Keeper AI
     const goalWidth = goalRect.width;
-    let targetXPercent = (e.clientX - goalRect.left) / goalWidth; // 0 to 1 relative to goal left
-    let keeperMoveX = 0; // px relative to center
+    let keeperMoveX = 0;
 
-    const saveChance = 0.35; // 35% chance to save if on target
+    const saveChance = 0.35;
     const willSave = Math.random() < saveChance;
 
     if (willSave && isOnTarget) {
-        // Move to intercept (relative to center of goal)
-        // Goal center is at goalRect.left + width/2
+        // Intercept
         const goalCenter = goalRect.left + goalWidth / 2;
-        const clickOffset = e.clientX - goalCenter;
-        keeperMoveX = clickOffset;
+        keeperMoveX = e.clientX - goalCenter;
     } else {
-        // Dive random
+        // Wrong way / Random
         const randomDir = Math.random() > 0.5 ? 1 : -1;
-        keeperMoveX = randomDir * (Math.random() * goalWidth * 0.4);
+        keeperMoveX = randomDir * (Math.random() * goalWidth * 0.45);
     }
 
-    goalkeeper.style.transform = `translateX(calc(-50% + ${keeperMoveX}px)) rotate(${keeperMoveX > 0 ? 15 : -15}deg)`;
+    // Keeper Animation (Dive/Stretch)
+    const rotate = keeperMoveX > 0 ? 45 : -45;
+    // translateY to simulate jump
+    goalkeeper.style.transform = `translateX(calc(-50% + ${keeperMoveX}px)) translateY(-20px) rotate(${rotate}deg)`;
 
     // Result Delay
     setTimeout(() => {
         if (isOnTarget && !willSave) {
             handleGoal();
         } else if (isOnTarget && willSave) {
-            handleMiss(true);
+            handleMiss(true); // Save
         } else {
-            handleMiss(false);
+            handleMiss(false); // Wide
         }
 
-        setTimeout(resetRound, 2000);
+        setTimeout(resetRound, 2500);
     }, 600);
 }
 
 function handleGoal() {
+    // Net Physics
+    netMesh.classList.add('net-bulge');
+    setTimeout(() => netMesh.classList.remove('net-bulge'), 300);
+
+    // Find next unrevealed letter
     let foundIndex = -1;
     for (let i = 0; i < TARGET_WORD.length; i++) {
         if (!revealedMask[i]) {
@@ -176,43 +213,48 @@ function handleGoal() {
 
     renderWord();
 
+    // Confetti
+    startConfetti();
+
     if (revealedMask.every(b => b)) {
-        setTimeout(showVictory, 500);
+        setTimeout(showVictory, 1000);
     } else {
         const letter = TARGET_WORD[foundIndex];
         const ord = getOrdinal(foundIndex);
         const joke = JOKES_ON_GOAL[Math.floor(Math.random() * JOKES_ON_GOAL.length)];
-        showMessage(`GOLAÇO! Você descobriu a ${ord} letra: '${letter}'!\n${joke}`, 'good');
+        showToast(`GOLAÇO! ${ord} letra: '${letter}'! ${joke}`, 'goal');
     }
 }
 
 function handleMiss(saved) {
     const taunt = TAUNTS_ON_MISS[Math.floor(Math.random() * TAUNTS_ON_MISS.length)];
-    showMessage(saved ? taunt : "PRA FORA! Tenta de novo!", 'bad');
+    showToast(saved ? taunt : "PRA FORA! Tenta de novo!", 'miss');
+
+    // Screen Shake if hit post (approximated by 'saved' or near miss)
+    if (!saved) {
+        fieldStage.classList.add('shake');
+        setTimeout(() => fieldStage.classList.remove('shake'), 500);
+    }
 }
 
 function resetRound() {
     isShooting = false;
-
-    // Reset Ball without animation
-    ball.style.transition = 'none';
-    ball.style.transform = ''; // Reverts to CSS default (centered)
+    ball.style.transform = 'translateX(-50%)';
     ball.classList.remove('shot');
 
-    // Force reflow
-    void ball.offsetWidth;
+    ballShadow.style.transform = 'translateX(-50%)';
+    ballShadow.style.opacity = '1';
 
-    // Reset Keeper
     goalkeeper.style.transform = 'translateX(-50%)';
 }
 
 function showVictory() {
     isGameActive = false;
     victoryModal.classList.remove('hidden');
-    startConfetti();
+    startConfetti(200);
 }
 
-// Snow Effect
+// Effects
 function startSnow() {
     const snowContainer = document.getElementById('snow-container');
     const particleCount = 40;
@@ -227,22 +269,24 @@ function startSnow() {
     }
 }
 
-function startConfetti() {
+function startConfetti(amount = 50) {
     const colors = ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f', '#fff'];
-    const snowContainer = document.getElementById('snow-container');
+    const container = document.getElementById('snow-container');
 
-    for (let i = 0; i < 80; i++) {
+    for (let i = 0; i < amount; i++) {
         const conf = document.createElement('div');
         conf.className = 'snowflake';
         conf.style.background = colors[Math.floor(Math.random() * colors.length)];
         conf.style.left = Math.random() * 100 + '%';
         conf.style.width = '8px';
         conf.style.height = '8px';
-        conf.style.borderRadius = '0'; // Square confetti
-        conf.style.animationDuration = (Math.random() * 2 + 1) + 's';
-        snowContainer.appendChild(conf);
+        conf.style.borderRadius = '0';
+        conf.style.animation = `fall ${Math.random() * 1 + 1}s linear`;
+
+        // Remove after animation
+        container.appendChild(conf);
+        setTimeout(() => conf.remove(), 2000);
     }
 }
 
-// Start
 init();
