@@ -1,296 +1,1166 @@
+/* ============================================
+   NATAL EM FAMÍLIA - Pênaltis 
+   Estilos Renovados
+   ============================================ */
+
 :root {
-    --primary-blue: #0054a6;
-    --primary-white: #ffffff;
-    --accent-gold: #FFD700;
-    --bg-dark: #0f172a;
-    --glass-bg: rgba(15, 23, 42, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.1);
+    /* Cores dos Times */
+    --cruzeiro-blue: #0054a6;
+    --cruzeiro-light: #4da6ff;
+    --galo-black: #1a1a1a;
+    --galo-white: #f5f5f5;
+    
+    /* Cores de Natal */
+    --christmas-red: #c41e3a;
+    --christmas-green: #228b22;
+    --christmas-gold: #ffd700;
+    --snow-white: #f0f8ff;
+    
+    /* UI */
+    --bg-dark: #0a1628;
+    --card-bg: rgba(20, 40, 80, 0.95);
+    --success: #2ecc71;
+    --danger: #e74c3c;
+    --warning: #f39c12;
 }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    user-select: none;
     -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
 }
 
 body {
-    background-color: #000;
-    font-family: 'Roboto', sans-serif;
-    height: 100vh;
-    width: 100vw;
-    overflow: hidden;
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg-dark);
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-/* App Container - Mobile Centered */
 #app {
     width: 100%;
     height: 100%;
-    max-width: 500px; /* Mobile width constraint on desktop */
+    max-width: 480px;
     max-height: 900px;
-    background: #000;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    background: linear-gradient(180deg, #0a1628 0%, #1a3a5c 100%);
 }
 
-#game-stage {
+/* ============================================
+   NEVE CAINDO
+   ============================================ */
+
+#snow-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.snowflake {
+    position: absolute;
+    color: white;
+    font-size: 1rem;
+    text-shadow: 0 0 5px rgba(255,255,255,0.8);
+    animation: fall linear infinite;
+    opacity: 0.8;
+}
+
+@keyframes fall {
+    0% {
+        transform: translateY(-10vh) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(110vh) rotate(360deg);
+        opacity: 0.3;
+    }
+}
+
+/* ============================================
+   TELA DO JOGO
+   ============================================ */
+
+#game-screen {
     width: 100%;
     height: 100%;
     position: relative;
+    display: none;
 }
 
-/* --- Environment --- */
-.stadium-bg {
+#game-screen.active {
+    display: block;
+}
+
+/* Estádio */
+.stadium {
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 0;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
 }
 
 .sky {
-    height: 40%;
-    background: linear-gradient(to bottom, #050a14, #1a2c4e);
+    height: 35%;
+    background: linear-gradient(180deg, #0a0a20 0%, #1a2a4a 60%, #2a4a6a 100%);
+    position: relative;
+}
+
+.star {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle 2s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+    0% { opacity: 0.3; transform: scale(1); }
+    100% { opacity: 1; transform: scale(1.3); }
 }
 
 .stands {
     height: 20%;
-    background:
-        radial-gradient(circle at 50% 100%, rgba(255,255,255,0.1) 0%, transparent 60%),
-        repeating-linear-gradient(90deg, #111, #111 2px, #222 3px);
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
     position: relative;
+    overflow: hidden;
 }
-.stands::after { /* Floodlights effect */
+
+.stands::before {
     content: '';
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.2), transparent 70%);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 10px,
+        rgba(255,255,255,0.03) 10px,
+        rgba(255,255,255,0.03) 12px
+    );
 }
 
-.grass {
-    height: 40%;
-    background: linear-gradient(to bottom, #1a472a, #2e7d32);
-    /* Perspective lines */
-    background-image:
-        linear-gradient(to bottom, #1a472a, #2e7d32),
-        repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 2px, transparent 2px, transparent 100px);
-    background-blend-mode: overlay;
-}
-
-/* --- World (Pseudo-3D Layer) --- */
-#world {
+.stands::after {
+    content: '🎄  🎅  ⭐  🎄  🎅  ⭐  🎄';
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    perspective: 800px; /* CSS Perspective for some elements */
-    overflow: hidden;
-    z-index: 1;
-    pointer-events: none;
-}
-
-/* Goal Construction */
-#goal-container {
-    position: absolute;
-    top: 35%; /* Horizon line approximately */
+    bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
-    width: 280px;
-    height: 100px; /* Appears small due to distance */
+    font-size: 1.2rem;
+    white-space: nowrap;
+    animation: marquee 10s linear infinite;
+}
+
+@keyframes marquee {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+}
+
+.field {
+    height: 45%;
+    background: linear-gradient(180deg, #1a5c2e 0%, #2d8a4e 50%, #1a5c2e 100%);
+    position: relative;
+}
+
+.field::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 20px,
+        rgba(255,255,255,0.03) 20px,
+        rgba(255,255,255,0.03) 40px
+    );
+}
+
+/* ============================================
+   GOL
+   ============================================ */
+
+#goal-area {
+    position: absolute;
+    top: 28%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 260px;
+    height: 120px;
     z-index: 10;
 }
 
+.net {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    bottom: 0;
+    background: 
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 8px,
+            rgba(255,255,255,0.15) 8px,
+            rgba(255,255,255,0.15) 9px
+        ),
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 8px,
+            rgba(255,255,255,0.15) 8px,
+            rgba(255,255,255,0.15) 9px
+        );
+    border-radius: 0 0 5px 5px;
+}
+
+.post {
+    position: absolute;
+    width: 8px;
+    height: 100%;
+    background: linear-gradient(90deg, #ddd 0%, #fff 50%, #ddd 100%);
+    border-radius: 4px;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+}
+
+.post.left { left: 0; }
+.post.right { right: 0; }
+
 .crossbar {
-    position: absolute; top: 0; left: 0; width: 100%; height: 6px;
-    background: #eee; border-radius: 3px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-    z-index: 2;
-}
-.post-left, .post-right {
-    position: absolute; top: 0; width: 6px; height: 100%;
-    background: #eee; border-radius: 3px;
-    z-index: 2;
-}
-.post-left { left: 0; }
-.post-right { right: 0; }
-
-.net-back {
-    position: absolute; top: 0; left: 4%; width: 92%; height: 100%;
-    background:
-        repeating-linear-gradient(45deg, rgba(255,255,255,0.2) 0, rgba(255,255,255,0.2) 1px, transparent 1px, transparent 8px),
-        repeating-linear-gradient(-45deg, rgba(255,255,255,0.2) 0, rgba(255,255,255,0.2) 1px, transparent 1px, transparent 8px);
-    background-color: rgba(0,0,0,0.1);
-    transform: translateZ(-20px); /* Fake depth if using preserve-3d, but here mainly visual */
-    z-index: 1;
-}
-
-/* Characters SVG Containers */
-#keeper-container {
     position: absolute;
-    bottom: 0; left: 50%;
-    width: 80px; height: 100px;
-    transform: translateX(-50%); /* Base position */
-    z-index: 3;
-    /* We will move this via JS */
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: linear-gradient(180deg, #fff 0%, #ddd 50%, #bbb 100%);
+    border-radius: 4px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.4);
 }
 
-#player-container {
+/* Zonas de Mira */
+#target-zones {
     position: absolute;
-    bottom: 10%; /* Closer to camera */
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+#target-zones.visible {
+    opacity: 1;
+}
+
+.zone {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.zone:hover {
+    background: rgba(255, 215, 0, 0.3);
+    border-color: var(--christmas-gold);
+}
+
+.zone.selected {
+    background: rgba(0, 255, 0, 0.3);
+    border-color: var(--success);
+    animation: pulse 0.5s ease;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* ============================================
+   GOLEIRO
+   ============================================ */
+
+#goalkeeper {
+    position: absolute;
+    bottom: 0;
     left: 50%;
-    width: 120px; height: 180px;
     transform: translateX(-50%);
-    z-index: 20;
+    width: 70px;
+    height: 90px;
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: 5;
 }
 
-/* Ball */
-#ball-container {
+#goalkeeper.dive-left {
+    transform: translateX(-150%) rotate(-25deg);
+}
+
+#goalkeeper.dive-right {
+    transform: translateX(50%) rotate(25deg);
+}
+
+#goalkeeper.dive-center {
+    transform: translateX(-50%) translateY(-20px);
+}
+
+.keeper-body {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.keeper-head {
     position: absolute;
-    /* Initial position: Player spot */
-    bottom: 18%; left: 50%;
-    width: 0; height: 0; /* Center point */
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 28px;
+    background: #ffdbac;
+    border-radius: 50%;
+}
+
+.keeper-head .santa-hat {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-bottom: 20px solid var(--christmas-red);
+}
+
+.keeper-head .santa-hat::after {
+    content: '●';
+    position: absolute;
+    top: -8px;
+    left: -3px;
+    color: white;
+    font-size: 10px;
+}
+
+.keeper-torso {
+    position: absolute;
+    top: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 35px;
+    background: repeating-linear-gradient(
+        90deg,
+        #fff 0px,
+        #fff 6px,
+        #000 6px,
+        #000 12px
+    );
+    border-radius: 5px;
+}
+
+.keeper-arms {
+    position: absolute;
+    top: 28px;
+    left: 0;
+    right: 0;
+}
+
+.keeper-arms .arm {
+    position: absolute;
+    width: 8px;
+    height: 35px;
+    background: #fff;
+    border-radius: 4px;
+}
+
+.keeper-arms .arm.left {
+    left: 0;
+    transform: rotate(30deg);
+    transform-origin: top center;
+}
+
+.keeper-arms .arm.right {
+    right: 0;
+    transform: rotate(-30deg);
+    transform-origin: top center;
+}
+
+.keeper-legs {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 30px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.keeper-legs .leg {
+    width: 10px;
+    height: 30px;
+    background: #fff;
+    border-radius: 5px;
+}
+
+.gloves {
+    position: absolute;
+    top: 55px;
+    left: 0;
+    right: 0;
+}
+
+.glove {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: var(--warning);
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.glove.left { left: -5px; }
+.glove.right { right: -5px; }
+
+/* ============================================
+   BOLA
+   ============================================ */
+
+#ball-wrapper {
+    position: absolute;
+    bottom: 22%;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 15;
 }
 
 #ball {
-    width: 24px; height: 24px;
-    background: radial-gradient(circle at 35% 35%, #fff, #ddd 40%, #999 80%);
+    width: 32px;
+    height: 32px;
+    background: radial-gradient(circle at 30% 30%, #fff 0%, #eee 40%, #ccc 100%);
     border-radius: 50%;
-    transform: translate(-50%, -50%); /* Center on container */
-    box-shadow: inset -2px -2px 5px rgba(0,0,0,0.2);
-    /* Texture details via pseudo-element? simple is better for physics rotation */
+    position: relative;
+    box-shadow: 
+        inset -3px -3px 6px rgba(0,0,0,0.2),
+        2px 4px 8px rgba(0,0,0,0.4);
+    transition: transform 0.05s linear;
 }
-#ball::after {
-    content: '';
-    position: absolute; top: 20%; left: 20%; width: 60%; height: 60%;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 0 L60 30 L90 40 L70 70 L80 100 L50 80 L20 100 L30 70 L10 40 L40 30 Z' fill='none' stroke='%23333' stroke-width='5'/%3E%3C/svg%3E") center/contain no-repeat;
-    opacity: 0.5;
+
+.ball-pattern {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60%;
+    height: 60%;
+    border: 2px solid #333;
+    border-radius: 50%;
+    opacity: 0.3;
 }
 
 #ball-shadow {
     position: absolute;
-    width: 24px; height: 6px;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 10px;
     background: rgba(0,0,0,0.4);
     border-radius: 50%;
-    transform: translate(-50%, 0);
-    filter: blur(2px);
-    /* JS will update opacity and scale based on height */
+    filter: blur(3px);
+    transition: all 0.1s;
 }
 
-/* --- UI Overlay --- */
-#ui-layer {
+#ball-wrapper.shooting #ball {
+    animation: ballFly 0.6s cubic-bezier(0.2, 0, 0.3, 1) forwards;
+}
+
+#ball-wrapper.goal #ball {
+    animation: ballGoal 0.6s cubic-bezier(0.2, 0, 0.3, 1) forwards;
+}
+
+@keyframes ballFly {
+    0% {
+        transform: scale(1) translateY(0);
+    }
+    50% {
+        transform: scale(0.7) translateY(-100px);
+    }
+    100% {
+        transform: scale(0.4) translateY(-180px);
+    }
+}
+
+@keyframes ballGoal {
+    0% {
+        transform: scale(1) translateY(0);
+    }
+    60% {
+        transform: scale(0.4) translateY(-180px);
+    }
+    100% {
+        transform: scale(0.3) translateY(-200px);
+    }
+}
+
+/* ============================================
+   JOGADOR
+   ============================================ */
+
+#player {
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 100;
-    pointer-events: none; /* Let clicks pass to touch zone */
+    bottom: 8%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 120px;
+    z-index: 12;
 }
 
-#touch-zone {
+#player.kicking .player-legs .leg.right {
+    animation: kick 0.4s ease-out;
+}
+
+@keyframes kick {
+    0% { transform: rotate(0deg); }
+    30% { transform: rotate(-45deg) translateY(-10px); }
+    100% { transform: rotate(0deg); }
+}
+
+.player-body {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.player-head {
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: auto; /* Capture clicks */
-    z-index: 90;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 35px;
+    height: 35px;
+    background: #8d5524;
+    border-radius: 50%;
 }
 
-.hud-header {
-    position: absolute; top: 20px; width: 100%;
-    display: flex; justify-content: center;
+.player-head .santa-hat {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 18px solid transparent;
+    border-right: 18px solid transparent;
+    border-bottom: 25px solid var(--christmas-red);
 }
 
-.score-board {
-    background: rgba(0,0,0,0.6);
-    padding: 10px 20px;
-    border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.2);
+.player-head .santa-hat::after {
+    content: '●';
+    position: absolute;
+    top: -10px;
+    left: -4px;
+    color: white;
+    font-size: 12px;
+}
+
+.player-torso {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 45px;
+    background: var(--cruzeiro-blue);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.player-torso .number {
+    color: white;
+    font-family: 'Bangers', cursive;
+    font-size: 24px;
+}
+
+.player-legs {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 35px;
+    height: 45px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.player-legs .leg {
+    width: 12px;
+    height: 45px;
+    background: white;
+    border-radius: 6px;
+    transform-origin: top center;
+}
+
+/* ============================================
+   HUD
+   ============================================ */
+
+#hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 15px;
+    z-index: 20;
+}
+
+.score-display {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.team {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,0,0,0.5);
+    padding: 8px 15px;
+    border-radius: 30px;
     backdrop-filter: blur(5px);
 }
 
-.word-slots {
-    display: flex; gap: 5px;
-}
-.letter-slot {
-    width: 30px; height: 40px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 4px;
-    display: flex; align-items: center; justify-content: center;
-    color: white; font-family: 'Russo One'; font-size: 24px;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    border-bottom: 2px solid rgba(255,255,255,0.2);
-}
-.letter-slot.revealed {
-    background: var(--primary-blue);
-    border-color: #4da6ff;
-    box-shadow: 0 0 10px var(--primary-blue);
+.team .shield {
+    font-size: 1.5rem;
 }
 
-/* Toast */
-#toast-container {
+.team span {
+    font-family: 'Bangers', cursive;
+    font-size: 2rem;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.vs {
+    font-family: 'Bangers', cursive;
+    font-size: 1rem;
+    color: var(--christmas-gold);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.word-progress {
+    text-align: center;
+}
+
+#word-display {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+.letter-slot {
+    width: 32px;
+    height: 42px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bangers', cursive;
+    font-size: 24px;
+    color: white;
+    border: 2px solid rgba(255,255,255,0.2);
+    transition: all 0.3s;
+}
+
+.letter-slot.revealed {
+    background: var(--cruzeiro-blue);
+    border-color: var(--cruzeiro-light);
+    box-shadow: 0 0 15px var(--cruzeiro-blue);
+    animation: letterReveal 0.5s ease;
+}
+
+@keyframes letterReveal {
+    0% { transform: scale(1.5) rotateY(180deg); }
+    100% { transform: scale(1) rotateY(0deg); }
+}
+
+.hint {
+    color: rgba(255,255,255,0.6);
+    font-size: 0.75rem;
+}
+
+/* ============================================
+   INSTRUÇÃO
+   ============================================ */
+
+#instruction {
     position: absolute;
-    top: 100px; width: 100%;
-    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    bottom: 35%;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    color: white;
+    opacity: 0;
+    animation: fadeInOut 3s ease infinite;
+    z-index: 25;
     pointer-events: none;
 }
-.toast-msg {
-    background: white; color: #333;
-    padding: 10px 20px; border-radius: 50px;
-    font-weight: bold; font-size: 14px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    max-width: 80%; text-align: center;
-}
-.toast-msg.goal { background: #4CAF50; color: white; }
-.toast-msg.miss { background: #F44336; color: white; }
 
-/* Modals */
-.modal {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85);
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.3s;
-    backdrop-filter: blur(5px);
-    z-index: 200;
-}
-.modal.active {
-    opacity: 1; pointer-events: auto;
+#instruction.hidden {
+    display: none;
 }
 
-.modal-card {
-    background: #1e293b;
-    width: 80%; max-width: 300px;
-    padding: 30px;
+#instruction .arrow {
+    font-size: 2rem;
+    animation: bounce 1s ease infinite;
+}
+
+#instruction p {
+    font-size: 0.9rem;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    background: rgba(0,0,0,0.5);
+    padding: 5px 15px;
+    border-radius: 20px;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+/* ============================================
+   MENSAGEM DE RESULTADO
+   ============================================ */
+
+#result-message {
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    text-align: center;
+    z-index: 100;
+    pointer-events: none;
+    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+#result-message.show {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+#result-message .content {
+    background: white;
+    padding: 20px 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    max-width: 280px;
+}
+
+#result-message.goal .content {
+    background: linear-gradient(135deg, var(--success), #27ae60);
+    color: white;
+}
+
+#result-message.miss .content {
+    background: linear-gradient(135deg, var(--danger), #c0392b);
+    color: white;
+}
+
+#result-message.saved .content {
+    background: linear-gradient(135deg, var(--warning), #e67e22);
+    color: white;
+}
+
+#result-message .emoji {
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+
+#result-message .title {
+    font-family: 'Bangers', cursive;
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+}
+
+#result-message .joke {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* ============================================
+   CONFETE
+   ============================================ */
+
+#confetti-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 500;
+    overflow: hidden;
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    animation: confettiFall 3s linear forwards;
+}
+
+@keyframes confettiFall {
+    0% {
+        transform: translateY(-10vh) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(110vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+/* ============================================
+   TELAS (LOGIN/VITÓRIA)
+   ============================================ */
+
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    background: linear-gradient(180deg, #0a1628 0%, #1a2040 50%, #2a1040 100%);
+}
+
+.screen.active {
+    display: flex;
+}
+
+/* Login */
+.login-card {
+    background: var(--card-bg);
+    padding: 40px 30px;
     border-radius: 20px;
     text-align: center;
     border: 1px solid rgba(255,255,255,0.1);
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    max-width: 320px;
+    width: 90%;
+    position: relative;
+    overflow: hidden;
 }
 
-.brand-title {
-    font-family: 'Russo One'; color: var(--accent-gold);
-    font-size: 28px; line-height: 1.2; margin-bottom: 10px;
+.christmas-lights {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: repeating-linear-gradient(
+        90deg,
+        var(--christmas-red) 0px,
+        var(--christmas-red) 10px,
+        var(--christmas-green) 10px,
+        var(--christmas-green) 20px,
+        var(--christmas-gold) 20px,
+        var(--christmas-gold) 30px
+    );
+    animation: lightsPulse 2s ease infinite;
 }
-.subtitle { color: #94a3b8; margin-bottom: 20px; font-size: 14px; }
 
-.input-wrapper { display: flex; flex-direction: column; gap: 10px; }
-
-input {
-    background: rgba(0,0,0,0.3); border: 1px solid #334155;
-    padding: 12px; border-radius: 8px; color: white; text-align: center;
-    font-size: 16px; outline: none;
+@keyframes lightsPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
 }
-input:focus { border-color: var(--primary-blue); }
 
-button {
-    background: var(--primary-blue); color: white;
-    padding: 12px; border: none; border-radius: 8px;
-    font-weight: bold; font-size: 16px; cursor: pointer;
-    box-shadow: 0 4px 0 #003366;
-    transition: transform 0.1s;
+.login-card h1 {
+    font-family: 'Bangers', cursive;
+    font-size: 2rem;
+    color: var(--christmas-gold);
+    margin-bottom: 5px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
 }
-button:active { transform: translateY(4px); box-shadow: none; }
 
-.error-text { color: #ef4444; font-size: 14px; margin-top: 10px; }
-.hidden { display: none; }
+.login-card h2 {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 20px;
+    font-weight: 400;
+}
 
-@keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.vs-badge {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    font-family: 'Bangers', cursive;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.team-badge {
+    font-size: 2.5rem;
+    animation: teamBounce 1s ease infinite alternate;
+}
+
+.team-badge.cruzeiro {
+    animation-delay: 0s;
+}
+
+.team-badge.galo {
+    animation-delay: 0.5s;
+}
+
+@keyframes teamBounce {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-5px); }
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.input-group input {
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.2);
+    padding: 15px;
+    border-radius: 10px;
+    color: white;
+    font-size: 1rem;
+    text-align: center;
+    outline: none;
+    transition: all 0.3s;
+}
+
+.input-group input::placeholder {
+    color: rgba(255,255,255,0.4);
+}
+
+.input-group input:focus {
+    border-color: var(--cruzeiro-light);
+    box-shadow: 0 0 15px rgba(0,84,166,0.3);
+}
+
+.input-group button {
+    background: linear-gradient(135deg, var(--cruzeiro-blue), var(--cruzeiro-light));
+    border: none;
+    padding: 15px;
+    border-radius: 10px;
+    color: white;
+    font-family: 'Bangers', cursive;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(0,84,166,0.4);
+}
+
+.input-group button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,84,166,0.5);
+}
+
+.input-group button:active {
+    transform: translateY(0);
+}
+
+.error {
+    color: var(--danger);
+    font-size: 0.9rem;
+    margin-top: 15px;
+    animation: shake 0.5s ease;
+}
+
+.hidden {
+    display: none !important;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-5px); }
+    40%, 80% { transform: translateX(5px); }
+}
+
+.footer-text {
+    color: rgba(255,255,255,0.3);
+    font-size: 0.7rem;
+    margin-top: 20px;
+}
+
+/* Victory */
+.victory-card {
+    background: linear-gradient(135deg, var(--card-bg), rgba(40, 60, 100, 0.95));
+    padding: 40px 30px;
+    border-radius: 20px;
+    text-align: center;
+    border: 2px solid var(--christmas-gold);
+    box-shadow: 0 0 40px rgba(255,215,0,0.3);
+    max-width: 320px;
+    width: 90%;
+    animation: victoryPulse 2s ease infinite;
+}
+
+@keyframes victoryPulse {
+    0%, 100% { box-shadow: 0 0 40px rgba(255,215,0,0.3); }
+    50% { box-shadow: 0 0 60px rgba(255,215,0,0.5); }
+}
+
+.trophy {
+    font-size: 4rem;
+    animation: trophyBounce 1s ease infinite;
+}
+
+@keyframes trophyBounce {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-10px) rotate(5deg); }
+}
+
+.victory-card h1 {
+    font-family: 'Bangers', cursive;
+    font-size: 2.5rem;
+    color: var(--christmas-gold);
+    margin: 10px 0;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.victory-card p {
+    color: rgba(255,255,255,0.8);
+    margin-bottom: 15px;
+}
+
+.revealed-name {
+    font-family: 'Bangers', cursive;
+    font-size: 2.5rem;
+    color: white;
+    background: linear-gradient(135deg, var(--cruzeiro-blue), var(--cruzeiro-light));
+    padding: 15px 25px;
+    border-radius: 10px;
+    margin: 15px 0;
+    letter-spacing: 3px;
+    box-shadow: 0 5px 20px rgba(0,84,166,0.5);
+}
+
+.message-box {
+    background: rgba(255,255,255,0.1);
+    padding: 15px;
+    border-radius: 10px;
+    margin: 20px 0;
+}
+
+.message-box p {
+    margin: 0;
+    color: white;
+    font-size: 1.1rem;
+}
+
+.message-box .sub {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.6);
+    margin-top: 5px;
+}
+
+#play-again-btn {
+    background: linear-gradient(135deg, var(--christmas-green), #27ae60);
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    color: white;
+    font-family: 'Bangers', cursive;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(34,139,34,0.4);
+}
+
+#play-again-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(34,139,34,0.5);
+}
+
+/* ============================================
+   SHAKE DE TELA
+   ============================================ */
+
+#app.shake {
+    animation: screenShake 0.4s ease;
+}
+
+@keyframes screenShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-5px) rotate(-0.5deg); }
+    40% { transform: translateX(5px) rotate(0.5deg); }
+    60% { transform: translateX(-3px) rotate(-0.3deg); }
+    80% { transform: translateX(3px) rotate(0.3deg); }
+}
+
+/* ============================================
+   RESPONSIVO
+   ============================================ */
+
+@media (max-height: 700px) {
+    #goal-area {
+        top: 25%;
+        width: 220px;
+        height: 100px;
+    }
+    
+    #player {
+        bottom: 5%;
+        transform: translateX(-50%) scale(0.8);
+    }
+    
+    #ball-wrapper {
+        bottom: 18%;
+    }
+    
+    .score-display .team span {
+        font-size: 1.5rem;
+    }
+    
+    .letter-slot {
+        width: 28px;
+        height: 36px;
+        font-size: 20px;
+    }
+}
